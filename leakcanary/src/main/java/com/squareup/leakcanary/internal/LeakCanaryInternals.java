@@ -93,6 +93,9 @@ public final class LeakCanaryInternals {
     packageManager.setComponentEnabledSetting(component, newState, DONT_KILL_APP);
   }
 
+  /**
+   * 查找 HeapAnalyzerService 服务进程，如果存在返回true
+   */
   public static boolean isInServiceProcess(Context context, Class<? extends Service> serviceClass) {
     PackageManager packageManager = context.getPackageManager();
     PackageInfo packageInfo;

@@ -184,6 +184,8 @@ public final class LeakCanary {
   /**
    * Whether the current process is the process running the {@link HeapAnalyzerService}, which is
    * a different process than the normal app process.
+   *
+   * 判断设备是有存在 HeapAnalyzerService 进程，如果存在则返回true
    */
   public static boolean isInAnalyzerProcess(@NonNull Context context) {
     Boolean isInAnalyzerProcess = LeakCanaryInternals.isInAnalyzerProcess;

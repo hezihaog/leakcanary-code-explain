@@ -28,6 +28,7 @@ public class ExampleApplication extends Application {
 
   protected void setupLeakCanary() {
     //enabledStrictMode();
+    //如果 HeapAnalyzerService 服务进程存在，则不需要再调用 install()，设备有一个进程即可服务所有app
     if (LeakCanary.isInAnalyzerProcess(this)) {
       // This process is dedicated to LeakCanary for heap analysis.
       // You should not init your app in this process.
