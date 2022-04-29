@@ -80,7 +80,7 @@ public interface FragmentRefWatcher {
     private final Application.ActivityLifecycleCallbacks activityLifecycleCallbacks =
         new ActivityLifecycleCallbacksAdapter() {
           @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            //Activity销毁，监听Fragment内存泄露
+            //Activity创建，监听Fragment内存泄露
             for (FragmentRefWatcher watcher : fragmentRefWatchers) {
               watcher.watchFragments(activity);
             }
