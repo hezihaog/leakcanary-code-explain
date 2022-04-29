@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** A {@link RefWatcherBuilder} with appropriate Android defaults. */
+//AndroidRefWatcherBuilder继承于RefWatcherBuilder，是针对安卓平台使用的
 public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRefWatcherBuilder> {
 
   private static final long DEFAULT_WATCH_DELAY_MILLIS = SECONDS.toMillis(5);
@@ -31,6 +32,8 @@ public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRef
   /**
    * Sets a custom {@link AbstractAnalysisResultService} to listen to analysis results. This
    * overrides any call to {@link #heapDumpListener(HeapDump.Listener)}.
+   *
+   * 设置一个自定义的AbstractAnalysisResultService子类，用于分析内存泄露，并把结果发送到通知中
    */
   public @NonNull AndroidRefWatcherBuilder listenerServiceClass(
       @NonNull Class<? extends AbstractAnalysisResultService> listenerServiceClass) {
@@ -88,21 +91,27 @@ public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRef
    * @throws UnsupportedOperationException if called more than once per Android process.
    */
   public @NonNull RefWatcher buildAndInstall() {
+    //不允许重复调用安装方法
     if (LeakCanaryInternals.installedRefWatcher != null) {
       throw new UnsupportedOperationException("buildAndInstall() should only be called once.");
     }
+    //创建RefWatcher对象
     RefWatcher refWatcher = build();
+    //非禁用状态，进入if
     if (refWatcher != DISABLED) {
       if (enableDisplayLeakActivity) {
         LeakCanaryInternals.setEnabledAsync(context, DisplayLeakActivity.class, true);
       }
+      //watchActivities 默认为true，默认允许监听Activity内存泄露
       if (watchActivities) {
         ActivityRefWatcher.install(context, refWatcher);
       }
+      //watchFragments 默认为true，默认允许监听Fragment内存泄露
       if (watchFragments) {
         FragmentRefWatcher.Helper.install(context, refWatcher);
       }
     }
+    //更新安装完成的标志位
     LeakCanaryInternals.installedRefWatcher = refWatcher;
     return refWatcher;
   }

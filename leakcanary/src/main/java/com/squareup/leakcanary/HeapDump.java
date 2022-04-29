@@ -37,6 +37,11 @@ public final class HeapDump implements Serializable {
       }
     };
 
+    /**
+     * 开始分析堆内存信息
+     *
+     * @param heapDump 堆内存信息
+     */
     void analyze(HeapDump heapDump);
   }
 

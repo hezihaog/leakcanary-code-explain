@@ -70,6 +70,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+/**
+ * 用于展示内存泄露信息的Activity
+ */
 @SuppressWarnings("ConstantConditions")
 public final class DisplayLeakActivity extends Activity {
 

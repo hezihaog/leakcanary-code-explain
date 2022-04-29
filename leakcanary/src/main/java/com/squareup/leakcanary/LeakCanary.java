@@ -36,12 +36,18 @@ public final class LeakCanary {
   /**
    * Creates a {@link RefWatcher} that works out of the box, and starts watching activity
    * references (on ICS+).
+   * 
+   * 安装LeakCanary
    */
   public static @NonNull
   RefWatcher install(@NonNull Application application) {
-    return refWatcher(application).listenerServiceClass(DisplayLeakService.class)
-        .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())
-        .buildAndInstall();
+    return refWatcher(application)
+            //设置分析内存泄露和发送结果通知的前台服务
+            .listenerServiceClass(DisplayLeakService.class)
+            //添加一些需要忽略的对象，例如AOSP中一些泄露的对象
+            .excludedRefs(AndroidExcludedRefs.createAppDefaults().build())
+            //开始安装
+            .buildAndInstall();
   }
 
   /**
@@ -57,6 +63,9 @@ public final class LeakCanary {
     return refWatcher;
   }
 
+  /**
+   * 创建AndroidRefWatcherBuilder对象
+   */
   public static @NonNull AndroidRefWatcherBuilder refWatcher(@NonNull Context context) {
     return new AndroidRefWatcherBuilder(context);
   }

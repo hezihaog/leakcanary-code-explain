@@ -39,10 +39,19 @@ public abstract class ForegroundService extends IntentService {
   @Override
   public void onCreate() {
     super.onCreate();
+    //发送前台服务通知
     showForegroundNotification(100, 0, true,
         getString(R.string.leak_canary_notification_foreground_text));
   }
 
+  /**
+   * 发送前台服务通知
+   *
+   * @param max 总进度
+   * @param progress 当前进度
+   * @param indeterminate 通知是否可不断更新
+   * @param contentText 通知内容
+   */
   protected void showForegroundNotification(int max, int progress, boolean indeterminate,
       String contentText) {
     Notification.Builder builder = new Notification.Builder(this)
@@ -57,10 +66,14 @@ public abstract class ForegroundService extends IntentService {
     onHandleIntentInForeground(intent);
   }
 
+  /**
+   * 子类处理Intent
+   */
   protected abstract void onHandleIntentInForeground(@Nullable Intent intent);
 
   @Override public void onDestroy() {
     super.onDestroy();
+    //停止前台服务
     stopForeground(true);
   }
 

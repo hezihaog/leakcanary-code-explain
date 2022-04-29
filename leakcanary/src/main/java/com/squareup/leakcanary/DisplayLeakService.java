@@ -38,6 +38,8 @@ import java.util.Locale;
  * <p>
  * You can extend this class and override {@link #afterDefaultHandling(HeapDump, AnalysisResult,
  * String)} to add custom behavior, e.g. uploading the heap dump.
+ *
+ * 用于展示堆分析结果的Service
  */
 public class DisplayLeakService extends AbstractAnalysisResultService {
 
@@ -49,10 +51,13 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     String leakInfo = leakInfo(this, heapDump, result, true);
     CanaryLog.d("%s", leakInfo);
 
+    //对分析文件，重命名
     heapDump = renameHeapdump(heapDump);
+    //重新保存到本地
     boolean resultSaved = saveResult(heapDump, result);
 
     String contentTitle;
+    //保存成功，发送成功通知
     if (resultSaved) {
       PendingIntent pendingIntent =
           DisplayLeakActivity.createPendingIntent(this, heapDump.referenceKey);
@@ -84,6 +89,7 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
       String contentText = getString(R.string.leak_canary_notification_message);
       showNotification(pendingIntent, contentTitle, contentText);
     } else {
+      //保存失败，发送失败通知
       onAnalysisResultFailure(getString(R.string.leak_canary_could_not_save_text));
     }
 
@@ -109,6 +115,9 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
     return resultFile != null;
   }
 
+  /**
+   * 对分析文件，重命名
+   */
   private HeapDump renameHeapdump(HeapDump heapDump) {
     String fileName =
         new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss_SSS'.hprof'", Locale.US).format(new Date());

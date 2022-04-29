@@ -157,6 +157,8 @@ public final class HeapAnalyzer {
   /**
    * Searches the heap dump for a {@link KeyedWeakReference} instance with the corresponding key,
    * and then computes the shortest strong reference path from that instance to the GC roots.
+   *
+   * 开始分析堆内存信息
    */
   public @NonNull AnalysisResult checkForLeak(@NonNull File heapDumpFile,
       @NonNull String referenceKey,

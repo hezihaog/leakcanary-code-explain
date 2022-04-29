@@ -34,8 +34,15 @@ public final class ServiceHeapDumpListener implements HeapDump.Listener {
     this.context = checkNotNull(context, "context").getApplicationContext();
   }
 
+  /**
+   * 通知Service进行内存泄露分析
+   *
+   * @param heapDump 堆信息
+   */
   @Override public void analyze(@NonNull HeapDump heapDump) {
+    //非空判断
     checkNotNull(heapDump, "heapDump");
+    //启动Service进行分析
     HeapAnalyzerService.runAnalysis(context, heapDump, listenerServiceClass);
   }
 }

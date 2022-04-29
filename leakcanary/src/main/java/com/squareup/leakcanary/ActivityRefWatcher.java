@@ -37,16 +37,24 @@ public final class ActivityRefWatcher {
     install(application, refWatcher);
   }
 
+  /**
+   * 开始监听Activity内存泄露
+   */
   public static void install(@NonNull Context context, @NonNull RefWatcher refWatcher) {
     Application application = (Application) context.getApplicationContext();
+    //创建监听对象
     ActivityRefWatcher activityRefWatcher = new ActivityRefWatcher(application, refWatcher);
-
+    //开始监听Activity生命周期
     application.registerActivityLifecycleCallbacks(activityRefWatcher.lifecycleCallbacks);
   }
 
+  /**
+   * Activity生命周期回调对象
+   */
   private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
       new ActivityLifecycleCallbacksAdapter() {
         @Override public void onActivityDestroyed(Activity activity) {
+          //Activity的onDestroy()被调用，准备销毁时，开始监听对象是否内存泄露
           refWatcher.watch(activity);
         }
       };
@@ -54,17 +62,27 @@ public final class ActivityRefWatcher {
   private final Application application;
   private final RefWatcher refWatcher;
 
+  /**
+   * Activity内存泄露监听器
+   */
   private ActivityRefWatcher(Application application, RefWatcher refWatcher) {
     this.application = application;
     this.refWatcher = refWatcher;
   }
 
+  /**
+   * 开始监听
+   */
   public void watchActivities() {
     // Make sure you don't get installed twice.
+    //确保只会有一次监听，避免重复注册
     stopWatchingActivities();
     application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
   }
 
+  /**
+   * 停止监听
+   */
   public void stopWatchingActivities() {
     application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks);
   }

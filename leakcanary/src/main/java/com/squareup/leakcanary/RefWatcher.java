@@ -62,6 +62,8 @@ public final class RefWatcher {
   /**
    * Identical to {@link #watch(Object, String)} with an empty string reference name.
    *
+   * 和watch(object, string)方法相同，只是第二个参数 referenceName 为空字符串
+   *
    * @see #watch(Object, String)
    */
   public void watch(Object watchedReference) {
@@ -79,14 +81,20 @@ public final class RefWatcher {
     if (this == DISABLED) {
       return;
     }
+    //参数判空
     checkNotNull(watchedReference, "watchedReference");
     checkNotNull(referenceName, "referenceName");
+    //获取当前时间戳
     final long watchStartNanoTime = System.nanoTime();
+    //生成一个唯一Key，用于标识泄露的对象
     String key = UUID.randomUUID().toString();
+    //把对象存起来，强引用
     retainedKeys.add(key);
+    //创建一个弱引用，并绑定queue弱引用队列
     final KeyedWeakReference reference =
         new KeyedWeakReference(watchedReference, key, referenceName, queue);
 
+    //开始定时监听对象是否被GC回收
     ensureGoneAsync(watchStartNanoTime, reference);
   }
 
@@ -111,9 +119,16 @@ public final class RefWatcher {
     return new HashSet<>(retainedKeys);
   }
 
+  /**
+   * 开始定时监听对象是否被GC回收
+   * @param watchStartNanoTime 对象开始监听的时间
+   * @param reference 要监听的对象
+   */
   private void ensureGoneAsync(final long watchStartNanoTime, final KeyedWeakReference reference) {
+    //通过线程池发出任务
     watchExecutor.execute(new Retryable() {
       @Override public Result run() {
+        //执行任务
         return ensureGone(reference, watchStartNanoTime);
       }
     });
@@ -121,31 +136,47 @@ public final class RefWatcher {
 
   @SuppressWarnings("ReferenceEquality") // Explicitly checking for named null.
   Retryable.Result ensureGone(final KeyedWeakReference reference, final long watchStartNanoTime) {
+    //记录GC开始时间
     long gcStartNanoTime = System.nanoTime();
+    //计算对象监听时间到任务执行时间的时长
     long watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);
 
+    //移除已经被回收掉的弱引用对象
     removeWeaklyReachableReferences();
 
     if (debuggerControl.isDebuggerAttached()) {
       // The debugger can create false leaks.
       return RETRY;
     }
+
+    //查询一下，这个弱引用对象是否已被回收
     if (gone(reference)) {
+      //已被回收，返回任务结果为结束
       return DONE;
     }
+
+    //通知一次GC
     gcTrigger.runGc();
+    //再次移除已经被回收掉的弱引用对象
     removeWeaklyReachableReferences();
-    if (!gone(reference)) {
+    //再查询一下，这个弱引用对象是否已被回收
+    if (!gone(reference)) {//还是没有被回收，可能是对象被内存泄露了
+      //记录Dump堆的时间
       long startDumpHeap = System.nanoTime();
+      //计算出GC花费的时长
       long gcDurationMs = NANOSECONDS.toMillis(startDumpHeap - gcStartNanoTime);
 
+      //执行Dump堆，生成.hprof文件
       File heapDumpFile = heapDumper.dumpHeap();
+      //发现Dump失败了，那么再重试
       if (heapDumpFile == RETRY_LATER) {
         // Could not dump the heap.
         return RETRY;
       }
+      //Dump成功了，计算花费的时长
       long heapDumpDurationMs = NANOSECONDS.toMillis(System.nanoTime() - startDumpHeap);
 
+      //保存执行过程中的信息
       HeapDump heapDump = heapDumpBuilder.heapDumpFile(heapDumpFile).referenceKey(reference.key)
           .referenceName(reference.name)
           .watchDurationMs(watchDurationMs)
@@ -153,19 +184,31 @@ public final class RefWatcher {
           .heapDumpDurationMs(heapDumpDurationMs)
           .build();
 
+      //通知监听器，开始分析堆内存信息
       heapdumpListener.analyze(heapDump);
     }
+    //对象被回收了，那么返回执行任务为完成
     return DONE;
   }
 
+  /**
+   * 查询这个弱引用是否不存在，如果不存在就代表已经被GC回收了
+   *
+   * @param reference 要被检查的对象
+   * @return true代表对象已被回收
+   */
   private boolean gone(KeyedWeakReference reference) {
     return !retainedKeys.contains(reference.key);
   }
 
+  /**
+   * 移除已经被回收掉的弱引用对象
+   */
   private void removeWeaklyReachableReferences() {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.
     KeyedWeakReference ref;
+    //通过一个while循环，不断从队列中获取被回收的弱引用对象，如果能获取到，就是有对象被回调，那么把它从
     while ((ref = (KeyedWeakReference) queue.poll()) != null) {
       retainedKeys.remove(ref.key);
     }

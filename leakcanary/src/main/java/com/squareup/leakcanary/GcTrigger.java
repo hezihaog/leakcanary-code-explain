@@ -21,6 +21,9 @@ package com.squareup.leakcanary;
  * RefWatcher} checks the reference queue again, to avoid taking a heap dump if possible.
  */
 public interface GcTrigger {
+  /**
+   * 默认实现
+   */
   GcTrigger DEFAULT = new GcTrigger() {
     @Override public void runGc() {
       // Code taken from AOSP FinalizationTest:
@@ -28,8 +31,11 @@ public interface GcTrigger {
       // java/lang/ref/FinalizationTester.java
       // System.gc() does not garbage collect every time. Runtime.gc() is
       // more likely to perform a gc.
+      //如果是 System.gc()，不会每次收到通知都执行GC，而 Runtime.getRuntime().gc()，更有可能执行GC
       Runtime.getRuntime().gc();
+      //让线程睡眠一下
       enqueueReferences();
+      //通知执行对象的 finalize() 方法
       System.runFinalization();
     }
 
@@ -44,5 +50,8 @@ public interface GcTrigger {
     }
   };
 
+  /**
+   * 通知执行一次GC
+   */
   void runGc();
 }
