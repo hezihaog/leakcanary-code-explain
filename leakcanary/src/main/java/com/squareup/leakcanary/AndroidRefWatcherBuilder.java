@@ -18,6 +18,9 @@ import java.util.concurrent.TimeUnit;
 //AndroidRefWatcherBuilder继承于RefWatcherBuilder，是针对安卓平台使用的
 public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRefWatcherBuilder> {
 
+  /**
+   * 默认内存泄漏监测的开始延时时间
+   */
   private static final long DEFAULT_WATCH_DELAY_MILLIS = SECONDS.toMillis(5);
 
   private final Context context;

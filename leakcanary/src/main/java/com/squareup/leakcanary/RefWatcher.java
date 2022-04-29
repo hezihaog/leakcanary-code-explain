@@ -88,9 +88,9 @@ public final class RefWatcher {
     final long watchStartNanoTime = System.nanoTime();
     //生成一个唯一Key，用于标识泄露的对象
     String key = UUID.randomUUID().toString();
-    //把对象存起来，强引用
+    //把唯一Key存起来
     retainedKeys.add(key);
-    //创建一个弱引用，并绑定queue弱引用队列
+    //创建一个弱引用包裹需要监听内存泄漏的对象，并绑定queue弱引用队列，当弱引用被回收时，会把弱引用放进这个队列中
     final KeyedWeakReference reference =
         new KeyedWeakReference(watchedReference, key, referenceName, queue);
 
@@ -157,7 +157,7 @@ public final class RefWatcher {
 
     //通知一次GC
     gcTrigger.runGc();
-    //再次移除已经被回收掉的弱引用对象
+    //再次移除已经被回收掉的弱引用对象的Key
     removeWeaklyReachableReferences();
     //再查询一下，这个弱引用对象是否已被回收
     if (!gone(reference)) {//还是没有被回收，可能是对象被内存泄露了
@@ -192,7 +192,7 @@ public final class RefWatcher {
   }
 
   /**
-   * 查询这个弱引用是否不存在，如果不存在就代表已经被GC回收了
+   * 检查弱引用的Key是否还在Set中，如果不存在就代表已经被GC回收了
    *
    * @param reference 要被检查的对象
    * @return true代表对象已被回收
@@ -208,7 +208,7 @@ public final class RefWatcher {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.
     KeyedWeakReference ref;
-    //通过一个while循环，不断从队列中获取被回收的弱引用对象，如果能获取到，就是有对象被回调，那么把它从
+    //通过一个while循环，不断从队列中获取被回收的弱引用对象，如果能获取到，就是有对象被回调，那么把它从Set中移除
     while ((ref = (KeyedWeakReference) queue.poll()) != null) {
       retainedKeys.remove(ref.key);
     }
