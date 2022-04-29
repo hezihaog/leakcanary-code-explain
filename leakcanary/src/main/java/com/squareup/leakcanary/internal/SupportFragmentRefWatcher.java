@@ -24,6 +24,9 @@ import androidx.fragment.app.FragmentManager;
 
 import com.squareup.leakcanary.RefWatcher;
 
+/**
+ * 监听Support包的Fragment，该类会被反射创建和调用
+ */
 class SupportFragmentRefWatcher implements FragmentRefWatcher {
   private final RefWatcher refWatcher;
 
@@ -35,6 +38,7 @@ class SupportFragmentRefWatcher implements FragmentRefWatcher {
       new FragmentManager.FragmentLifecycleCallbacks() {
 
         @Override public void onFragmentViewDestroyed(FragmentManager fm, Fragment fragment) {
+          //监听Fragment的View是否内存泄露
           View view = fragment.getView();
           if (view != null) {
             refWatcher.watch(view);
@@ -42,11 +46,13 @@ class SupportFragmentRefWatcher implements FragmentRefWatcher {
         }
 
         @Override public void onFragmentDestroyed(FragmentManager fm, Fragment fragment) {
+          //监听Fragment对象是否内存泄露
           refWatcher.watch(fragment);
         }
       };
 
   @Override public void watchFragments(Activity activity) {
+    //获取FragmentManager，注册Fragment的生命周期回调
     if (activity instanceof FragmentActivity) {
       FragmentManager supportFragmentManager =
           ((FragmentActivity) activity).getSupportFragmentManager();

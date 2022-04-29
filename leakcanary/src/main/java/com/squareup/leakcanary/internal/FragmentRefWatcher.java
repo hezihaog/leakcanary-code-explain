@@ -34,6 +34,9 @@ import java.util.List;
  */
 public interface FragmentRefWatcher {
 
+  /**
+   * 监听Activity上Fragment的内存泄露
+   */
   void watchFragments(Activity activity);
 
   final class Helper {
@@ -41,13 +44,18 @@ public interface FragmentRefWatcher {
     private static final String SUPPORT_FRAGMENT_REF_WATCHER_CLASS_NAME =
         "com.squareup.leakcanary.internal.SupportFragmentRefWatcher";
 
+    /**
+     * 开始监听Fragment内存泄露
+     */
     public static void install(Context context, RefWatcher refWatcher) {
       List<FragmentRefWatcher> fragmentRefWatchers = new ArrayList<>();
 
+      //Android 8.0，监听android.app.Fragment包下的Fragment
       if (SDK_INT >= O) {
         fragmentRefWatchers.add(new AndroidOFragmentRefWatcher(refWatcher));
       }
 
+      //监听Support包的Fragment，具体实现在SupportFragmentRefWatcher中
       try {
         Class<?> fragmentRefWatcherClass = Class.forName(SUPPORT_FRAGMENT_REF_WATCHER_CLASS_NAME);
         Constructor<?> constructor =
@@ -58,12 +66,13 @@ public interface FragmentRefWatcher {
       } catch (Exception ignored) {
       }
 
+      //android.app.Fragment包、Support包的Fragment，都不能监听，那么return
       if (fragmentRefWatchers.size() == 0) {
         return;
       }
 
       Helper helper = new Helper(fragmentRefWatchers);
-
+      //注册监听Activity的生命周期
       Application application = (Application) context.getApplicationContext();
       application.registerActivityLifecycleCallbacks(helper.activityLifecycleCallbacks);
     }
@@ -71,6 +80,7 @@ public interface FragmentRefWatcher {
     private final Application.ActivityLifecycleCallbacks activityLifecycleCallbacks =
         new ActivityLifecycleCallbacksAdapter() {
           @Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            //Activity销毁，监听Fragment内存泄露
             for (FragmentRefWatcher watcher : fragmentRefWatchers) {
               watcher.watchFragments(activity);
             }

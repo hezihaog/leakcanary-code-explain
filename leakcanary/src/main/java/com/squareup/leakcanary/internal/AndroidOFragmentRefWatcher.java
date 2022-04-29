@@ -25,6 +25,9 @@ import androidx.annotation.RequiresApi;
 
 import com.squareup.leakcanary.RefWatcher;
 
+/**
+ * Android 8.0以上，可监听android.app.Fragment包下的Fragment
+ */
 @RequiresApi(Build.VERSION_CODES.O) //
 class AndroidOFragmentRefWatcher implements FragmentRefWatcher {
 
@@ -38,6 +41,7 @@ class AndroidOFragmentRefWatcher implements FragmentRefWatcher {
       new FragmentManager.FragmentLifecycleCallbacks() {
 
         @Override public void onFragmentViewDestroyed(FragmentManager fm, Fragment fragment) {
+          //监听Fragment的View是否内存泄露
           View view = fragment.getView();
           if (view != null) {
             refWatcher.watch(view);
@@ -46,11 +50,13 @@ class AndroidOFragmentRefWatcher implements FragmentRefWatcher {
 
         @Override
         public void onFragmentDestroyed(FragmentManager fm, Fragment fragment) {
+          //监听Fragment对象是否内存泄露
           refWatcher.watch(fragment);
         }
       };
 
   @Override public void watchFragments(Activity activity) {
+    //获取FragmentManager，注册Fragment的生命周期回调
     FragmentManager fragmentManager = activity.getFragmentManager();
     fragmentManager.registerFragmentLifecycleCallbacks(fragmentLifecycleCallbacks, true);
   }
